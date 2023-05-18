@@ -25,6 +25,9 @@ abstract class IEventBus {
   /// Subscribe `EventBus` on a specific type of event, and register responder to it.
   Stream<T> on<T extends AppEvent>();
 
+  /// Subscribe `EventBus` on completion of a specific type of event, and register responder to it.
+  Stream<T> onComplete<T extends AppEvent>();
+
   /// Subscribe `EventBus` on a specific type of event, and register responder to it.
   Stream<bool> whileInProgress<T extends AppEvent>();
 
@@ -88,6 +91,9 @@ class EventBus implements IEventBus {
   @override
   Stream<AppEvent?> get last$ => _lastEventSubject.distinct();
 
+  // completed events stream
+  final _completedEventSubject = BehaviorSubject<AppEvent>();
+
   final _inProgress = BehaviorSubject<List<AppEvent>>.seeded([]);
   List<AppEvent> get _isInProgressEvents => _inProgress.value;
   @override
@@ -130,6 +136,7 @@ class EventBus implements IEventBus {
       final newArr = _isInProgressEvents.toList()
         ..removeWhere((e) => e == event);
       _inProgress.add(newArr);
+      _completedEventSubject.add(event);
       fire(EventCompletionEvent(event));
     }
 
@@ -150,6 +157,15 @@ class EventBus implements IEventBus {
       return _lastEventSubject.stream as Stream<T>;
     } else {
       return _lastEventSubject.stream.where((event) => event is T).cast<T>();
+    }
+  }
+
+  @override
+  Stream<T> onComplete<T extends AppEvent>() {
+    if (T == dynamic) {
+      return _completedEventSubject.stream as Stream<T>;
+    } else {
+      return _completedEventSubject.stream.where((event) => event is T).cast<T>();
     }
   }
 
@@ -208,5 +224,6 @@ class EventBus implements IEventBus {
   void dispose() {
     _inProgress.close();
     _lastEventSubject.close();
+    _completedEventSubject.close();
   }
 }
