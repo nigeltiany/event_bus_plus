@@ -118,6 +118,10 @@ class EventBus implements IEventBus {
     if (allowLogging) {
       _logger.d(' ⚡️ [${event.timestamp}] $event');
     }
+    _inProgress.add([
+      ..._isInProgressEvents,
+      event,
+    ]);
   }
 
   @override
